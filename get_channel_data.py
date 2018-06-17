@@ -1,13 +1,15 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from datetime import datetime
+from data_io import write_videos_to_csv,read_videos_from_csv
 
 API_KEY_FILE = "api_key.txt"
 
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
-DEBUG = True
+DEBUG = False
 
 ################################################################################
 
@@ -33,6 +35,18 @@ def channel_id_from_username(service, username):
     ).execute()
 
     return results['items'][0]['id']
+
+
+def channel_username_from_id(service, id_):
+    """
+    returns the channel username for specified id
+    """
+    results = service.channels().list(
+        part="snippet",
+        id=id_
+    ).execute()
+
+    return results['items'][0]['snippet']['localized']['title']
 
 
 def upload_playlist_id(service, channel_id):
@@ -116,17 +130,20 @@ def main():
     parsed = parse_videos(videos)
 
     print("VIDEOS:", len(parsed))
-    if len(parsed) > 25:
-        ans = input("Print all " + str(len(parsed)) + " videos? (y/n) ")
+    upper = len(parsed)
+    if upper > 25:
+        ans = input("Print all " + str(upper) + " videos? (y/n) ")
 
-    upper = 25
-    if ans.lower().strip() == "y":
-        upper = len(parsed)
-    else:
-        print("Printing only the", upper, "most recent videos")
-
+    if ans.lower().strip() != "y":
+        upper = 25
+    
+    print("Printing the", upper, "most recent videos")
     for video in parsed[0:upper]:  
         print(video[0], "\t", video[1], "\t", video[2])  # id, date, title
+
+
+    fname = write_videos_to_csv(parsed, "CaseyNeistat")
+    print(fname)
 
 
 if __name__ == '__main__':

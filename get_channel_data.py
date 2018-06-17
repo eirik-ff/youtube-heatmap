@@ -33,6 +33,19 @@ def channel_id_from_username(service, username):
     return results['items'][0]['id']
 
 
+def upload_playlist_id(service, channel_id):
+    """
+    returns the upload playlist id for a specific channel
+    """
+    # not using playlist().list since it doesn't return upload id
+    results = service.channels().list(
+        part="contentDetails",
+        id=channel_id
+    ).execute()
+
+    return results['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+
+
 def all_videos_by_channel(service, id_):
     """
     get all videos posted by a specific channel. Enter either id or user name.
@@ -90,12 +103,15 @@ def parse_videos(videos):
 def main():
     service = get_authenticated_service()
 
-    videos = all_videos_by_channel(service, "UCtinbF-Q-fVthA0qrFQTgXQ")
-    parsed = parse_videos(videos)
+    CASEY_NEISTAT_ID = "UCtinbF-Q-fVthA0qrFQTgXQ"
+    upload_id = upload_playlist_id(service, CASEY_NEISTAT_ID)
 
-    print("VIDEOS:", len(videos), len(parsed))
-    for video in parsed:
-        print(video)
+    # videos = all_videos_by_channel(service, CASEY_NEISTAT_ID)
+    # parsed = parse_videos(videos)
+
+    # print("VIDEOS:", len(videos), len(parsed))
+    # for video in parsed:
+    #     print(video)
 
 
 if __name__ == '__main__':

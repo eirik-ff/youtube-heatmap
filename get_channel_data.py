@@ -109,16 +109,24 @@ def parse_videos(videos):
 def main():
     service = get_authenticated_service()
 
-    CASEY_NEISTAT_ID = "UCtinbF-Q-fVthA0qrFQTgXQ"
-    BON_APPETIT_ID   = "UCbpMy0Fg74eXXkvxJrtEn3w"
-    upload_id = upload_playlist_id(service, BON_APPETIT_ID)
+    channel_id = channel_id_from_username(service, "CaseyNeistat")
+    upload_id = upload_playlist_id(service, channel_id)
 
     videos = all_videos_in_playlist(service, upload_id)
     parsed = parse_videos(videos)
 
-    print("VIDEOS:", len(videos), len(parsed))
-    # for video in parsed:
-    #     print(video[0], "\t", video[1], "\t", video[2])  # id, date, title
+    print("VIDEOS:", len(parsed))
+    if len(parsed) > 25:
+        ans = input("Print all " + str(len(parsed)) + " videos? (y/n) ")
+
+    upper = 25
+    if ans.lower().strip() == "y":
+        upper = len(parsed)
+    else:
+        print("Printing only the", upper, "most recent videos")
+
+    for video in parsed[0:upper]:  
+        print(video[0], "\t", video[1], "\t", video[2])  # id, date, title
 
 
 if __name__ == '__main__':

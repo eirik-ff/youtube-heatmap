@@ -8,6 +8,7 @@ API_KEY_FILE = "api_key.txt"
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
+DEBUG = True
 
 def read_api_key(filename):
     with open(filename, "r") as f:
@@ -46,36 +47,36 @@ def upload_playlist_id(service, channel_id):
     return results['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
 
-def all_videos_by_channel(service, id_):
+def all_videos_in_playlist(service, id_):
     """
-    get all videos posted by a specific channel. Enter either id or user name.
+    get all videos in specified playlist.
     returns a list of video json from youtube api
     """
     list_args = {
         "part": "snippet",
-        "order": "date",
-        "maxResults": 50,
-        "channelId": id_,
-        "type": "video"
+        "playlistId": id_,
+        "maxResults": 50
     }
 
-    request = service.search().list(**list_args)
-    results = request.execute()
-
-    print("TOTAL RESULTS:", results['pageInfo']['totalResults'])
+    request = service.playlistItems().list(**list_args)
+    if DEBUG:
+        results = request.execute()
+        print("TOTAL RESULTS:", results['pageInfo']['totalResults'])
 
     videos = []  # list of 3-tuples: id,title,publish_date
     while request is not None:
         results = request.execute()
         len_ = len(results['items'])
 
-        if len_ == 0:
-            print(results)
+        if DEBUG:
+            print(len_)
+            if len_ == 0:
+                print(results)
 
         for vid in results['items']:
             videos.append(vid)
 
-        request = service.search().list_next(
+        request = service.playlistItems().list_next(
             previous_request=request,
             previous_response=results
         )
@@ -90,12 +91,16 @@ def parse_videos(videos):
     """
     parsed = []
     for vid in videos:
-        if vid['id']['kind'] == "youtube#video":
-            vid_id = vid['id']['videoId']
+        try:
+            id_   = vid['snippet']['resourceId']['videoId']
             title = vid['snippet']['title']
             date  = vid['snippet']['publishedAt']
 
-            parsed.append( (vid_id, title, date) )
+            parsed.append( (id_, title, date) )
+        except KeyError as kerr:
+            if DEBUG:
+                print(kerr, vid)
+            continue
 
     return parsed
 
@@ -106,12 +111,12 @@ def main():
     CASEY_NEISTAT_ID = "UCtinbF-Q-fVthA0qrFQTgXQ"
     upload_id = upload_playlist_id(service, CASEY_NEISTAT_ID)
 
-    # videos = all_videos_by_channel(service, CASEY_NEISTAT_ID)
-    # parsed = parse_videos(videos)
+    videos = all_videos_in_playlist(service, upload_id)
+    parsed = parse_videos(videos)
 
-    # print("VIDEOS:", len(videos), len(parsed))
-    # for video in parsed:
-    #     print(video)
+    print("VIDEOS:", len(videos), len(parsed))
+    for video in parsed:
+        print(video[0], "\t", video[2], "\t", video[1])  # id, date, title
 
 
 if __name__ == '__main__':

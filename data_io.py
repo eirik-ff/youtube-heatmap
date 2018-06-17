@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime
 
 def read_lines(path):
     """
@@ -37,25 +38,28 @@ def make_np_array(arr):
     return np.array(arr)
 
 
-def write_videos_to_csv(videos, username, filename=None):
+def write_videos_to_csv(videos, username, id_, filename=None):
     """
     writes parsed data to csv file.
     returns filename/filepath
     """
     SEP = ";"
-    HEADER = "# Video data for {name}\n# id{sep}publishedAt{sep}title\n".format(
+    HEADER = "# Video data for {name} ({id})\n# id{sep}publishedAt{sep}" \
+             "title\n".format(
         name=username, 
+        id=id_,
         sep=SEP
     )
 
     if filename is None:
+        username = username.replace(" ", "-")
         fmode = "w"
         filename = r"./data/{name}_{date}.csv".format(name=username,
                                                 date=str(datetime.now().date()))
     else:
         fmode = "a"
 
-    f = open(filename, fmode)
+    f = open(filename, fmode, encoding="UTF-8")
     f.write(HEADER)
 
     for video in videos:
@@ -82,7 +86,7 @@ def read_videos_from_csv(filename, sep=";"):
     reads csv file with data from write_videos_to_csv.
     returns a list of 3-tuples: id, publish_date, title
     """
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="UTF-8") as f:
         lines = f.readlines()
 
     videos = []

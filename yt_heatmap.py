@@ -13,33 +13,8 @@ from tkinter import filedialog
 import dateutil.parser
 
 
-gcd.DEBUG = True
+gcd.DEBUG = False
 
-
-def main_testing():
-    root = tk.Tk()
-    root.withdraw()  # hide root window
-    file_path = filedialog.askopenfilename()
-    print(file_path)
-
-    TEST_DATA_PATH = r"./data/test-data.csv"
-
-    weekdays = ["monday", "tuesday", "wednesday", "thursday", 
-                    "friday", "saturday", "sunday"]  # x
-    hours = [str(i) for i in range(0, 24)]  # y
-
-
-    lines = read_lines(file_path)
-    arr = parse_data_from_csv(lines)
-    data = make_np_array(arr)
-
-    ax = sns.heatmap(data, linewidth=0, xticklabels=weekdays, center=0.5, 
-                     annot=True, fmt=".2f", cmap="plasma")
-    ax.xaxis.set_ticks_position("top")
-
-    plt.show()
-
-################################################################################
 
 def display_heatmap(data, xlabels, colormap="plasma"):
     """
@@ -47,19 +22,18 @@ def display_heatmap(data, xlabels, colormap="plasma"):
     and entry as probability (0..1)
     """
     ax = sns.heatmap(data, linewidth=0, xticklabels=xlabels,
-                     annot=True, fmt=".2f", cmap=colormap)
+                     annot=False, fmt=".2f", cmap=colormap)
     ax.xaxis.set_ticks_position("top")
+    plt.xticks(rotation=45)
     plt.show()
 
 
-def get_videos(channel_id):
+def get_videos(service, channel_id):
     """
     returns a list of parsed videos
     """
-    youtube = get_authenticated_service()
-
-    upload_id = upload_playlist_id(youtube, channel_id)
-    videos = all_videos_in_playlist(youtube, upload_id)
+    upload_id = upload_playlist_id(service, channel_id)
+    videos = all_videos_in_playlist(service, upload_id)
     parsed = parse_videos(videos)
 
     return parsed
@@ -90,18 +64,52 @@ def videos_to_weekday_hour_probabilites(videos):
 
         probs[hour][weekday] += 1.0 / total
 
-    return probs
+    return make_np_array(probs)
+
+
+def user_input():
+    """
+    returns 2-tuple: is_id,id/username
+    """
+    name = input("Enter YouTube ID. If you can't find the ID, press "
+                "return and enter username: ")
+
+    is_id = True
+    if name.strip() == "":
+        is_id = False
+        name = input("Enter username: ")
+
+    return (is_id, name)
 
 
 def main():
-    YOUTUBE_ID = "UCtinbF-Q-fVthA0qrFQTgXQ"  # Casey Neistat
-    WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", 
-                    "friday", "saturday", "sunday"]
+    WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", 
+                    "Friday", "Saturday", "Sunday"]
 
-    videos = get_videos(YOUTUBE_ID)
-    print("Downloaded YouTube data...")
+    youtube = get_authenticated_service()
+
+    is_id, name = user_input()
+
+    if is_id:
+        channel_id = name
+    else:
+        channel_id = channel_id_from_username(youtube, name)
+
+    print("Downloading from YouTube...")
+    videos = get_videos(youtube, channel_id)
+    print("Done!")
+
+    print("Saving data...")
+    fname = write_videos_to_csv(videos, 
+                        channel_username_from_id(youtube, channel_id),
+                        channel_id)
+    print("Done! Saved to", fname)
+
     data = videos_to_weekday_hour_probabilites(videos)
+
     print("Displaying heatmap...")
+    username = channel_username_from_id(youtube, channel_id)
+    plt.figure(username)
     display_heatmap(data, WEEKDAYS)
 
 

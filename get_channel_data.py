@@ -142,7 +142,7 @@ def main():
         print(video[0], "\t", video[1], "\t", video[2])  # id, date, title
 
 
-    fname = write_videos_to_csv(parsed, "CaseyNeistat")
+    fname = write_videos_to_csv(parsed, "CaseyNeistat", channel_id)
     print(fname)
 
 

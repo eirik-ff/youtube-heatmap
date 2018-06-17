@@ -6,7 +6,7 @@ import seaborn as sns
 
 
 def main():
-    TEST_DATA_PATH = r"./test-data.csv"
+    TEST_DATA_PATH = r"./data/test-data.csv"
 
     weekdays = ["monday", "tuesday", "wednesday", "thursday", 
                     "friday", "saturday", "sunday"]  # x

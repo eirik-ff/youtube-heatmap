@@ -40,7 +40,7 @@ def make_np_array(arr):
 
 def main():
     from pprint import pprint
-    TEST_DATA_PATH = r"./test-data.csv"
+    TEST_DATA_PATH = r"./data/test-data.csv"
 
     lines = read_data(TEST_DATA_PATH)
     arr = parse_data(lines)

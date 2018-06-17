@@ -1,7 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from pprint import pprint
 
 API_KEY_FILE = "api_key.txt"
 
@@ -9,6 +8,8 @@ API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
 DEBUG = True
+
+################################################################################
 
 def read_api_key(filename):
     with open(filename, "r") as f:
@@ -87,16 +88,16 @@ def all_videos_in_playlist(service, id_):
 def parse_videos(videos):
     """
     parses video json returned from all_videos_by_channel
-    returns a list of 3-tuples: id, title, publish_date
+    returns a list of 3-tuples: id, publish_date, title 
     """
     parsed = []
     for vid in videos:
         try:
             id_   = vid['snippet']['resourceId']['videoId']
-            title = vid['snippet']['title']
             date  = vid['snippet']['publishedAt']
+            title = vid['snippet']['title']
 
-            parsed.append( (id_, title, date) )
+            parsed.append( (id_, date, title) )
         except KeyError as kerr:
             if DEBUG:
                 print(kerr, vid)
@@ -109,14 +110,15 @@ def main():
     service = get_authenticated_service()
 
     CASEY_NEISTAT_ID = "UCtinbF-Q-fVthA0qrFQTgXQ"
-    upload_id = upload_playlist_id(service, CASEY_NEISTAT_ID)
+    BON_APPETIT_ID   = "UCbpMy0Fg74eXXkvxJrtEn3w"
+    upload_id = upload_playlist_id(service, BON_APPETIT_ID)
 
     videos = all_videos_in_playlist(service, upload_id)
     parsed = parse_videos(videos)
 
     print("VIDEOS:", len(videos), len(parsed))
-    for video in parsed:
-        print(video[0], "\t", video[2], "\t", video[1])  # id, date, title
+    # for video in parsed:
+    #     print(video[0], "\t", video[1], "\t", video[2])  # id, date, title
 
 
 if __name__ == '__main__':

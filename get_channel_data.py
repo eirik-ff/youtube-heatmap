@@ -21,74 +21,81 @@ def get_authenticated_service():
     return service
 
 
-def main():
-    service = get_authenticated_service()
+def channel_id_from_username(service, username):
+    """
+    returns the channel id for specified username
+    """
+    results = service.channels().list(
+        part="id",
+        forUsername=username
+    ).execute()
 
-    request = service.search().list(
-        part="snippet",
-        channelId="UCtinbF-Q-fVthA0qrFQTgXQ",
-        order="date"
-    )
+    return results['items'][0]['id']
 
+
+def all_videos_by_channel(service, id_):
+    """
+    get all videos posted by a specific channel. Enter either id or user name.
+    returns a list of video json from youtube api
+    """
+    list_args = {
+        "part": "snippet",
+        "order": "date",
+        "maxResults": 50,
+        "channelId": id_,
+        "type": "video"
+    }
+
+    request = service.search().list(**list_args)
     results = request.execute()
 
-    print(results, end="\n\n")
-    
-    next_page = service.search().list_next(
-        previous_request=request,
-        previous_response=results
-    )
-
-    print(next_page.execute())
-    return
-
-    max_results = results['pageInfo']['totalResults']
-    print(max_results)
+    print("TOTAL RESULTS:", results['pageInfo']['totalResults'])
 
     videos = []  # list of 3-tuples: id,title,publish_date
-    others = []  # everything that's not youtube#video
+    while request is not None:
+        results = request.execute()
+        len_ = len(results['items'])
 
-    searched_results = 0
-    while searched_results < max_results:  # loop to get all results
-        # find max_results
-        if abs(max_results - searched_results) >= 50:  # 50 is max per search
-            max_ = 50
-        else:
-            max_ = max_results - searched_results
+        if len_ == 0:
+            print(results)
 
-        request = service.search().list(
-            part="snippet",
-            channelId="UCtinbF-Q-fVthA0qrFQTgXQ",
-            order="date",
-            maxResults=max_
+        for vid in results['items']:
+            videos.append(vid)
+
+        request = service.search().list_next(
+            previous_request=request,
+            previous_response=results
         )
 
-        results = request.execute()
+    return videos
 
-        searched_results += max_
 
-        # parse results
-        for vid in results['items']:
+def parse_videos(videos):
+    """
+    parses video json returned from all_videos_by_channel
+    returns a list of 3-tuples: id, title, publish_date
+    """
+    parsed = []
+    for vid in videos:
+        if vid['id']['kind'] == "youtube#video":
             vid_id = vid['id']['videoId']
             title = vid['snippet']['title']
             date  = vid['snippet']['publishedAt']
 
-            if vid['id']['kind'] == "youtube#video":
-                videos.append( (vid_id, title, date) )
-            else:
-                kind = vid['id']['kind']
-                others.append( (vid_id, kind, title, date) )
+            parsed.append( (vid_id, title, date) )
+
+    return parsed
 
 
-    print("VIDEOS:", len(videos))
-    for video in videos:
+def main():
+    service = get_authenticated_service()
+
+    videos = all_videos_by_channel(service, "UCtinbF-Q-fVthA0qrFQTgXQ")
+    parsed = parse_videos(videos)
+
+    print("VIDEOS:", len(videos), len(parsed))
+    for video in parsed:
         print(video)
-
-    print("OTHERS:", len(others))
-    for other in others:
-        print(other)
-
-
 
 
 if __name__ == '__main__':
